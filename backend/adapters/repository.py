@@ -9,19 +9,19 @@ from sqlalchemy import func
 
 class AbstractBookRepository(abc.ABC):
     def __init__(self):
-        self.seen = set()  
+        self.seen: set[Book] = set()  
 
     def add(self, book: Book):
         self._add(book)
-        # self.seen.add(book)
+        self.seen.add(book)
         
     def get_all(self) -> list[Book]:
         return self._get_all()
 
     def get(self, id) -> Book:
         book = self._get(id)
-        # if book:
-        #     self.seen.add(book)
+        if book:
+            self.seen.add(book)
         return book
 
     def search(self, name) -> list[Book]:
@@ -46,19 +46,19 @@ class AbstractBookRepository(abc.ABC):
 
 class AbstractUserRepository(abc.ABC):
     def __init__(self):
-        self.seen = set()  
+        self.seen: set[User] = set()  
 
     def add(self, user: User):
         self._add(user)
-        # self.seen.add(book)
+        self.seen.add(user)
         
     def get_all(self) -> list[User]:
         return self._get_all()
 
     def get(self, id) -> User:
         user = self._get(id)
-        # if user:
-        #     self.seen.add(user)
+        if user:
+            self.seen.add(user)
         return user
 
     def get_by_username(self, username: str) -> User:
@@ -82,17 +82,23 @@ class AbstractUserRepository(abc.ABC):
 
 class AbstractCheckoutRepository(abc.ABC):
     def __init__(self):
-        self.seen = set()  
+        self.seen: set[Checkout] = set()  
 
     def add(self, checkout: Checkout):
         self._add(checkout)
-        # self.seen.add(book)
+        self.seen.add(checkout)
         
     def get_all(self) -> list[Checkout]:
         return self._get_all()
 
     def get(self, id) -> Checkout:
         checkout = self._get(id)
+        if checkout:
+            self.seen.add(checkout)
+        return checkout
+
+    def get_by_info(self, book_id, user_id) -> Checkout:
+        checkout = self._get_by_info(book_id, user_id)
         if checkout:
             self.seen.add(checkout)
         return checkout
@@ -106,30 +112,58 @@ class AbstractCheckoutRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def _get_by_info(self, book_id, user_id) -> Checkout:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def _get_all(self) -> list[Checkout]:
         raise NotImplementedError
 
 class AbstractHoldRepository(abc.ABC):
     def __init__(self):
-        self.seen = set()  
+        self.seen: set[Hold] = set()  
 
     def add(self, hold: Hold):
         self._add(hold)
-        # self.seen.add(book)
+        self.seen.add(hold)
         
     def get_all(self) -> list[Hold]:
         return self._get_all()
 
     def get(self, id) -> Hold:
         hold = self._get(id)
-        # if hold:
-        #     self.seen.add(hold)
+        if hold:
+            self.seen.add(hold)
+        return hold
+    
+    def get_by_book_id(self, book_id) -> list[Hold]:
+        print(f"Getting holds for book {book_id}")
+        holds = self._get_by_book_id(book_id)
+        for hold in holds:
+            self.seen.add(hold)
+        return holds
+    
+    @abc.abstractmethod
+    def _get_by_book_id(self, book_id) -> list[Hold]:
+        raise NotImplementedError
+    
+    def get_by_info(self, book_id, user_id) -> Hold:
+        hold = self._get_by_info(book_id, user_id)
+        if hold:
+            self.seen.add(hold)
         return hold
     
     def get_next_position_on_book(self, book_id):
         raise NotImplementedError
     
-    def remove_hold(self, hold: Hold):
+    def remove_hold(self, hold: Hold) -> None:
+        holds = self._remove_hold(hold)
+        for hold in holds:
+            hold.move_up()
+            self.seen.add(hold)
+    
+    @abc.abstractmethod
+    def _remove_hold(self, hold: Hold) -> list[Hold]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -142,6 +176,10 @@ class AbstractHoldRepository(abc.ABC):
 
     @abc.abstractmethod
     def _get_all(self) -> list[Hold]:
+        raise NotImplementedError
+    
+    @abc.abstractmethod
+    def _get_by_info(self, book_id, user_id) -> Hold:
         raise NotImplementedError
 
 class BookRepository(AbstractBookRepository):
@@ -195,6 +233,9 @@ class CheckoutRepository(AbstractCheckoutRepository):
     
     def _get_all(self):
         return self.session.query(Checkout).all()
+    
+    def _get_by_info(self, book_id, user_id) -> Checkout:
+        return self.session.query(Checkout).filter_by(book_id=book_id, user_id=user_id).first()
 
 class HoldRepository(AbstractHoldRepository):
     def __init__(self, session: Session):
@@ -210,10 +251,18 @@ class HoldRepository(AbstractHoldRepository):
     def _get_all(self):
         return self.session.query(Hold).all()
     
+    def _get_by_info(self, book_id, user_id) -> Hold:
+        return self.session.query(Hold).filter_by(book_id=book_id, user_id=user_id).first()
+    
     def get_next_position_on_book(self, book_id):
         return self.session.query(func.coalesce(func.max(Hold.position), 0) + 1).filter(Hold.book_id == book_id).scalar()
     
-    def remove_hold(self, hold: Hold):
+    def _remove_hold(self, hold: Hold) -> list[Hold]:
         self.session.delete(hold)
-        self.session.query(Hold).filter(Hold.book_id == hold.book_id, Hold.position > hold.position) \
-            .update({"position": Hold.position - 1}, synchronize_session=False)
+        return self.session.query(Hold).filter(Hold.book_id == hold.book_id, Hold.position > hold.position).all()
+
+    def _get_by_book_id(self, book_id) -> list[Hold]:
+        return self.session.query(Hold).filter(Hold.book_id == book_id).all()
+
+        
+        

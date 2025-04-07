@@ -23,10 +23,18 @@ class AbstractUnitOfWork(abc.ABC):
     def commit(self):
         self._commit()
 
-    # def collect_new_events(self):
-    #     for book in self.products.seen:
-    #         while book.events:
-    #             yield book.events.pop(0)
+    def collect_new_events(self):
+        for book in self.books.seen:
+            while book.events:
+                yield book.events.pop(0)
+        
+        for user in self.users.seen:
+            while user.events:
+                yield user.events.pop(0)
+
+        for checkout in self.checkouts.seen:
+            while checkout.events:
+                yield checkout.events.pop(0)
 
     @abc.abstractmethod
     def _commit(self):

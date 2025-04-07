@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Table, MetaData, Column, Integer, String, Date, ForeignKey, Boolean,
+    Table, MetaData, Column, Integer, String, Date, ForeignKey, Boolean, event
 )
 from sqlalchemy.orm import registry, relationship
 
@@ -57,3 +57,18 @@ def start_mappers():
     })
     mapper_registry.map_imperatively(Hold, holds)
 
+@event.listens_for(Book, 'load')
+def receive_load(book, _):
+    book.events = []
+
+@event.listens_for(User, 'load')
+def receive_load(user, _):
+    user.events = []
+
+@event.listens_for(Checkout, 'load')
+def receive_load(checkout, _):
+    checkout.events = []
+
+@event.listens_for(Hold, 'load')
+def receive_load(hold, _):
+    hold.events = []

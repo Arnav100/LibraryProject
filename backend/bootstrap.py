@@ -3,30 +3,44 @@ from types import ModuleType
 from inspect import getmembers, isfunction
 
 from backend.adapters import orm
-
-from backend.service_layer import handlers, unit_of_work
+from backend.adapters.kafka import KafkaPublisher
+from backend.service_layer import handlers, unit_of_work, messagebus, event_handlers
 
 
 def bootstrap(
     start_orm: bool = True,
     uow: unit_of_work.AbstractUnitOfWork = unit_of_work.UnitOfWork(),
-) -> ModuleType:
+    kafka_bootstrap_servers: str = 'localhost:9092'
+) -> messagebus.MessageBus:
 
     if start_orm:
         orm.start_mappers()
 
     dependencies = {'uow': uow}
-    for method_name, handler in getmembers(handlers, isfunction):
-        setattr(handlers, method_name, inject_dependencies(handler, dependencies))
-    
-    return handlers
+    injected_command_handlers = {
+        command_type: inject_dependencies(handler, dependencies)
+        for command_type, handler in handlers.COMMAND_HANDLERS.items()
+    }
 
+    injected_event_handlers = {
+        event_type: [inject_dependencies(handler, dependencies)]
+        for event_type, handler in event_handlers.EVENT_HANDLERS.items()
+    }
 
-def inject_dependencies(handler, dependencies):
+    kafka_publisher = KafkaPublisher(bootstrap_servers=kafka_bootstrap_servers)
+
+    return messagebus.MessageBus(
+        uow=uow,
+        command_handlers=injected_command_handlers,
+        event_handlers=injected_event_handlers,
+        kafka_publisher=kafka_publisher
+    )
+
+def inject_dependencies(handler, dependencies: dict):
     params = inspect.signature(handler).parameters
     deps = {
         name: dependency
         for name, dependency in dependencies.items()
         if name in params
     }
-    return lambda *args, **kwargs: handler(*args, **kwargs, **deps)
+    return lambda message: handler(message, **deps)
