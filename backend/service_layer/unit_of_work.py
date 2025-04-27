@@ -35,6 +35,10 @@ class AbstractUnitOfWork(abc.ABC):
         for checkout in self.checkouts.seen:
             while checkout.events:
                 yield checkout.events.pop(0)
+                
+        for hold in self.holds.seen:
+            while hold.events:
+                yield hold.events.pop(0)    
 
     @abc.abstractmethod
     def _commit(self):

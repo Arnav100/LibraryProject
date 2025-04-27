@@ -2,6 +2,8 @@ from typing import List
 from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+
 from datetime import timedelta
 
 from backend import bootstrap
@@ -15,6 +17,17 @@ from backend.auth.utils import (
 import uvicorn
 
 app = FastAPI()
+origins = [
+    "http://localhost",
+    "http://localhost:8080",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 bus = bootstrap.bootstrap()
 app.add_middleware(AuthMiddleware, uow=bus.uow)
@@ -70,6 +83,8 @@ async def add_book(book: dict, request: Request):
         author=book["author"],
         isbn=book["isbn"],
         total_copies=book["total_copies"],
+        cover_url=book["cover_url"],
+        description=book["description"]
     )
     return bus.handle(cmd)
 
@@ -79,6 +94,14 @@ async def get_users(request: Request):
 
 @app.get("/users/{user_id}")
 async def get_user(user_id: int, request: Request):
+    user = views.UserView.get_by_id(bus.uow, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@app.get("/user/me")
+async def get_current_user(request: Request):
+    user_id = request.state.user_id
     user = views.UserView.get_by_id(bus.uow, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -96,6 +119,11 @@ async def add_user(user: dict):
 @app.get("/checkouts")
 async def get_checkouts(request: Request):
     return views.CheckoutView.get_all(bus.uow)
+
+@app.get("/checkouts/me")
+async def get_checkouts(request: Request):
+    user_id = request.state.user_id
+    return views.CheckoutView.get_by_user(bus.uow, user_id)
 
 @app.post("/checkout")
 async def checkout(user_id, book_id, request: Request):
@@ -126,6 +154,11 @@ async def search_book(title: str, request: Request):
 @app.get("/holds")
 async def get_holds(request: Request):
     return views.HoldView.get_all(bus.uow)
+
+@app.get("/holds/me")
+async def get_holds(request: Request):
+    user_id = request.state.user_id
+    return views.HoldView.get_by_user(bus.uow, user_id)
 
 @app.post("/hold")
 async def place_hold(user_id, book_id, request: Request):

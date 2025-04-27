@@ -6,29 +6,34 @@ from dataclasses import dataclass
 from backend.domain import events
 
 class Model:
-       def serialize(self) -> dict:
-            def serialize_value(value):
-                if isinstance(value, datetime):
-                    return value.isoformat()
-                elif isinstance(value, Model):
-                    return value.serialize()
-                return value
-           
-            return {
-                key: serialize_value(value)
-                for key, value in self.__dict__.items()
-                if not key.startswith("_") and not key.startswith("events")
-            }
+    def serialize(self) -> dict:
+        def serialize_value(value):
+            if isinstance(value, datetime):
+                return value.isoformat()
+            elif isinstance(value, Model):
+                return value.serialize()
+            return value
+
+        return {
+            key: serialize_value(value)
+            for key, value in self.values().items()
+            if not key.startswith("_") and not key.startswith("events")
+        }
+    
+    def values(self) -> dict:
+        return self.__dict__
 
 class Book(Model):
     
-    def __init__(self, name: str, author: str, isbn: str, total_copies: int):
+    def __init__(self, name: str, author: str, isbn: str, total_copies: int, cover_url: str | None = None, description: str | None = None):
         self.name = name
         self.author = author
         self.isbn = isbn
         self.total_copies = total_copies
         self.available_copies = total_copies
         self.id = None
+        self.cover_url = cover_url
+        self.description = description
         self.created_at = datetime.now()
         print(f"BOOK INIT: {self.name}")
         self.events = []
@@ -58,6 +63,16 @@ class Checkout(Model):
         self.returned = False
         self.id = None
         self.events = []
+        
+    def values(self) -> dict:
+        return {
+            "book": self.book,
+            "user": self.user,
+            "start_date": self.start_date,
+            "end_date": self.end_date,
+            "returned": self.returned,
+            "id": self.id
+        }
     
     @classmethod
     def create(cls, book: Book, user: User, start_date: datetime | None, end_date: datetime | None):
@@ -75,9 +90,9 @@ class Checkout(Model):
     
 class Hold(Model):
     
-    def __init__(self, book_id: int, user_id: int, position: int):
-        self.book_id = book_id
-        self.user_id = user_id
+    def __init__(self, book: Book, user: User, position: int):
+        self.book = book
+        self.user = user
         self.position = position
         self.hold_date = datetime.now()
         self.id = None
@@ -94,3 +109,12 @@ class Hold(Model):
                 new_position=self.position
             )
         )
+        
+    def values(self) -> dict:
+        return {
+            "book": self.book,
+            "user": self.user,
+            "position": self.position,
+            "hold_date": self.hold_date,
+            "id": self.id
+        }

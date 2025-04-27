@@ -14,7 +14,8 @@ def add_book(cmd: commands.AddBook, uow: AbstractUnitOfWork):
             author=cmd.author,
             isbn=cmd.isbn,
             total_copies=cmd.total_copies,
-            available_copies=cmd.total_copies
+            cover_url=cmd.cover_url,
+            description=cmd.description
         )
         uow.books.add(book)
         uow.commit()

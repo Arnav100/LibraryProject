@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Books - Library Management System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-warm">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-book-reader me-2"></i>
+                Library Management
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="books.html">Books</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">My Account</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <button id="loginBtn" class="btn btn-outline-light me-2">Login</button>
+                    <button id="registerBtn" class="btn btn-warm">Register</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container py-5">
+        <!-- Search and Filter Section -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="text" id="searchInput" class="form-control form-control-lg" placeholder="Search books by title, author, or ISBN...">
+                    <button class="btn btn-warm">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex justify-content-end">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-warm dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown">
+                            Sort By
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" data-sort="title">Title</a></li>
+                            <li><a class="dropdown-item" href="#" data-sort="author">Author</a></li>
+                            <li><a class="dropdown-item" href="#" data-sort="available">Available Copies</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Books Grid -->
+        <div class="row g-4" id="booksGrid">
+            <!-- Books will be loaded here dynamically -->
+        </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation" class="mt-5">
+            <ul class="pagination justify-content-center">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">Previous</a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </main>
+
+    <!-- Book Detail Modal -->
+    <div class="modal fade" id="bookDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warm text-white">
+                    <h5 class="modal-title">Book Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <img src="https://via.placeholder.com/300x400" class="img-fluid rounded" alt="Book Cover">
+                        </div>
+                        <div class="col-md-8">
+                            <h3 id="modalBookTitle" class="text-warm"></h3>
+                            <p class="text-muted" id="modalBookAuthor"></p>
+                            <div class="mb-3">
+                                <span class="badge bg-warm me-2">ISBN: <span id="modalBookISBN"></span></span>
+                                <span class="badge bg-success">Available: <span id="modalBookAvailable"></span></span>
+                            </div>
+                            <p class="mb-4" id="modalBookDescription">
+                                <!-- Book description will be loaded here -->
+                            </p>
+                            <button class="btn btn-warm checkout-btn">
+                                <i class="fas fa-shopping-cart me-2"></i>Checkout Book
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <!-- <script src="script.js"></script> -->
+    <script src="books.js"></script>
+</body>
+</html> 

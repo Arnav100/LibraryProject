@@ -3,19 +3,21 @@ from types import ModuleType
 from inspect import getmembers, isfunction
 
 from backend.adapters import orm
-from backend.adapters.kafka import KafkaPublisher
+from backend.adapters.kafka_publisher import KafkaPublisher
 from backend.service_layer import handlers, unit_of_work, messagebus, event_handlers
+import os
 
 
 def bootstrap(
     start_orm: bool = True,
     uow: unit_of_work.AbstractUnitOfWork = unit_of_work.UnitOfWork(),
-    kafka_bootstrap_servers: str = 'localhost:9092'
 ) -> messagebus.MessageBus:
 
     if start_orm:
         orm.start_mappers()
 
+    kafka_bootstrap_servers: str = os.getenv('KAFKA_BOOTSTRAP_SERVERS') or 'localhost:9092'
+    print(f"Kafka bootstrap servers: {kafka_bootstrap_servers}")
     dependencies = {'uow': uow}
     injected_command_handlers = {
         command_type: inject_dependencies(handler, dependencies)

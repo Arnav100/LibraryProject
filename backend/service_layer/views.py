@@ -37,11 +37,20 @@ class CheckoutView:
     def get_all(uow: AbstractUnitOfWork) -> List[dict]:
         with uow:
             return [checkout.serialize() for checkout in uow.checkouts.get_all()] 
+    
+    @staticmethod
+    def get_by_user(uow: AbstractUnitOfWork, user_id: int) -> List[dict]:
+        with uow:
+            return [checkout.serialize() for checkout in uow.checkouts.get_by_user(user_id)] 
         
 class HoldView:
     @staticmethod
     def get_all(uow: AbstractUnitOfWork) -> List[dict]:
         with uow:
             return [hold.serialize() for hold in uow.holds.get_all()] 
-        
+    
+    @staticmethod
+    def get_by_user(uow: AbstractUnitOfWork, user_id: int) -> List[dict]:
+        with uow:
+            return [hold.serialize() for hold in uow.holds.get_by_user(user_id)] 
         

@@ -41,6 +41,6 @@ def handle_hold_updated(event: events.HoldUpdated, uow: AbstractUnitOfWork):
 EVENT_HANDLERS: Dict[Type[events.Event], Callable] = {
     events.BookCheckedOut: handle_book_checked_out,
     events.BookReturned: handle_book_returned,
-    # events.HoldPlaced: handle_hold_placed,
+    events.HoldUpdated: handle_hold_updated,
     # events.HoldRemoved: handle_hold_removed,
 } 

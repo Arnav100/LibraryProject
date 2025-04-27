@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Callable, Dict, List, Union, Type, TYPE_CHECKING
 from backend.domain import commands, events
-from backend.adapters.kafka import KafkaPublisher
+from backend.adapters.kafka_publisher import KafkaPublisher
 
 if TYPE_CHECKING:
     from . import unit_of_work
@@ -26,24 +26,18 @@ class MessageBus:
         self.kafka_publisher = kafka_publisher
 
     def handle(self, message: Message):
-        self.queue = [message]
-        result = None
-        while self.queue:
-            message = self.queue.pop(0)
-            if isinstance(message, events.Event):
-                self.handle_event(message)
-            elif isinstance(message, commands.Command):
-                result = self.handle_command(message)
-            else:
-                raise Exception(f'{message} was not an Event or Command')
-        return result
+        if isinstance(message, events.Event):
+            self.handle_event(message)
+        elif isinstance(message, commands.Command):
+            self.handle_command(message)
+        else:
+            raise Exception(f'{message} was not an Event or Command')
+        self.publish_events()
 
     def handle_event(self, event: events.Event):
         for handler in self.event_handlers[type(event)]:
             try:
-                print('handling event %s with handler %s', event, handler)
-                if self.kafka_publisher:
-                    self.kafka_publisher.publish(event)
+                handler(event)
             except Exception:
                 print('Exception handling event %s', event)
                 continue
@@ -52,9 +46,11 @@ class MessageBus:
         print('handling command %s', command)
         try:
             handler = self.command_handlers[type(command)]
-            result = handler(command)
-            self.queue.extend(self.uow.collect_new_events())
-            return result
+            handler(command)
         except Exception:
             print('Exception handling command %s', command)
             raise
+        
+    def publish_events(self):
+        for event in self.uow.collect_new_events():
+            self.kafka_publisher.publish(event)

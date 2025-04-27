@@ -16,6 +16,8 @@ books = Table(
     Column('total_copies', Integer, nullable=False),
     Column('available_copies', Integer, nullable=False),
     Column('created_at', Date, nullable=False),
+    Column('cover_url', String(255)),
+    Column('description', String(255)),
 )
 
 users = Table(
@@ -55,7 +57,11 @@ def start_mappers():
         'book': relationship(Book),
         'user': relationship(User)
     })
-    mapper_registry.map_imperatively(Hold, holds)
+    
+    holds_mapper = mapper_registry.map_imperatively(Hold, holds, properties={
+        'book': relationship(Book),
+        'user': relationship(User)
+    })
 
 @event.listens_for(Book, 'load')
 def receive_load(book, _):

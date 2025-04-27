@@ -97,6 +97,9 @@ class AbstractCheckoutRepository(abc.ABC):
             self.seen.add(checkout)
         return checkout
 
+    def get_by_user(self, user_id) -> list[Checkout]:
+        return self._get_by_user(user_id)
+
     def get_by_info(self, book_id, user_id) -> Checkout:
         checkout = self._get_by_info(book_id, user_id)
         if checkout:
@@ -113,6 +116,10 @@ class AbstractCheckoutRepository(abc.ABC):
 
     @abc.abstractmethod
     def _get_by_info(self, book_id, user_id) -> Checkout:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _get_by_user(self, user_id) -> list[Checkout]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -143,8 +150,15 @@ class AbstractHoldRepository(abc.ABC):
             self.seen.add(hold)
         return holds
     
+    def get_by_user(self, user_id) -> list[Hold]:
+        return self._get_by_user(user_id)
+    
     @abc.abstractmethod
     def _get_by_book_id(self, book_id) -> list[Hold]:
+        raise NotImplementedError
+    
+    @abc.abstractmethod
+    def _get_by_user(self, user_id) -> list[Hold]:
         raise NotImplementedError
     
     def get_by_info(self, book_id, user_id) -> Hold:
@@ -236,6 +250,9 @@ class CheckoutRepository(AbstractCheckoutRepository):
     
     def _get_by_info(self, book_id, user_id) -> Checkout:
         return self.session.query(Checkout).filter_by(book_id=book_id, user_id=user_id).first()
+    
+    def _get_by_user(self, user_id) -> list[Checkout]:
+        return self.session.query(Checkout).filter_by(user_id=user_id).all()
 
 class HoldRepository(AbstractHoldRepository):
     def __init__(self, session: Session):
@@ -253,6 +270,9 @@ class HoldRepository(AbstractHoldRepository):
     
     def _get_by_info(self, book_id, user_id) -> Hold:
         return self.session.query(Hold).filter_by(book_id=book_id, user_id=user_id).first()
+    
+    def _get_by_user(self, user_id) -> list[Hold]:
+        return self.session.query(Hold).filter_by(user_id=user_id).all()
     
     def get_next_position_on_book(self, book_id):
         return self.session.query(func.coalesce(func.max(Hold.position), 0) + 1).filter(Hold.book_id == book_id).scalar()

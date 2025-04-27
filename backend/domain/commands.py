@@ -10,6 +10,8 @@ class AddBook(Command):
     author: str
     isbn: str
     total_copies: int
+    cover_url: str | None = None
+    description: str | None = None
 
 @define(frozen=True)
 class RemoveBook(Command):

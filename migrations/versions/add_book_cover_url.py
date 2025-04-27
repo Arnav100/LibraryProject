@@ -19,6 +19,9 @@ def upgrade():
     op.add_column('books', 
         sa.Column('cover_url', sa.String(255), nullable=True)
     )
+    op.add_column('books', 
+        sa.Column('description', sa.String(255), nullable=True)
+    )
 
 def downgrade():
     # Remove the cover_url column
