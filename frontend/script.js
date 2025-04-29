@@ -15,6 +15,34 @@ const recentBooksContainer = document.getElementById('recentBooks');
 loginBtn.addEventListener('click', () => loginModal.show());
 registerBtn.addEventListener('click', () => registerModal.show());
 
+// WebSocket connection
+let socket = null;
+
+function connectWebSocket(userId) {
+    if (socket) {
+        socket.close();
+    }
+    
+    socket = new WebSocket(`ws://localhost:8000/ws/${userId}`);
+    
+    socket.onmessage = (event) => {
+        const notification = JSON.parse(event.data);
+        if (notification.type === 'hold_updated') {
+            showToast(notification.message, 'info');
+            // If we're on the holds page, refresh the holds list
+            if (window.location.pathname.includes('account.html')) {
+                loadHolds();
+            }
+        }
+    };
+    
+    socket.onclose = () => {
+        console.log('WebSocket connection closed');
+        // Try to reconnect after 5 seconds
+        setTimeout(() => connectWebSocket(userId), 5000);
+    };
+}
+
 // Login functionality
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -36,6 +64,18 @@ loginForm.addEventListener('submit', async (e) => {
         if (response.ok) {
             const result = await response.json();
             localStorage.setItem('token', result.access_token);
+            
+            // Get user ID and connect WebSocket
+            const userResponse = await fetch(`${API_BASE_URL}/user/me`, {
+                headers: {
+                    'Authorization': `Bearer ${result.access_token}`
+                }
+            });
+            if (userResponse.ok) {
+                const user = await userResponse.json();
+                connectWebSocket(user.id);
+            }
+            
             loginModal.hide();
             updateAuthState();
             showToast('Login successful!', 'success');

@@ -1,9 +1,8 @@
 from typing import List
-from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi import FastAPI, HTTPException, Depends, status, Request, WebSocket, WebSocketDisconnect
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-
 from datetime import timedelta
 
 from backend import bootstrap
@@ -14,6 +13,7 @@ from backend.auth.utils import (
     verify_password, get_password_hash, create_access_token,
     verify_token, ACCESS_TOKEN_EXPIRE_MINUTES
 )
+from backend.entrypoint.connection_manager import ConnectionManager
 import uvicorn
 
 app = FastAPI()
@@ -32,6 +32,15 @@ app.add_middleware(
 bus = bootstrap.bootstrap()
 app.add_middleware(AuthMiddleware, uow=bus.uow)
 
+manager = ConnectionManager()
+
+@app.on_event("startup")
+async def startup_event():
+    await manager.start()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await manager.stop()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -180,5 +189,14 @@ async def remove_hold(hold_id, request: Request):
         return bus.handle(cmd)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(user_id)
 
 uvicorn.run(app)

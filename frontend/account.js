@@ -17,6 +17,31 @@ let currentUser = null;
 let currentCheckoutId = null;
 let currentHoldId = null;
 
+// WebSocket connection
+let socket = null;
+
+function connectWebSocket(userId) {
+    if (socket) {
+        socket.close();
+    }
+    
+    socket = new WebSocket(`ws://localhost:8000/ws/${userId}`);
+    
+    socket.onmessage = (event) => {
+        const notification = JSON.parse(event.data);
+        if (notification.type === 'hold_updated') {
+            showToast(notification.message, 'info');
+            loadHolds(); // Refresh the holds list
+        }
+    };
+    
+    socket.onclose = () => {
+        console.log('WebSocket connection closed');
+        // Try to reconnect after 5 seconds
+        setTimeout(() => connectWebSocket(userId), 5000);
+    };
+}
+
 // Check authentication
 function checkAuth() {
     const token = localStorage.getItem('token');
@@ -43,6 +68,9 @@ async function loadUserProfile() {
             currentUser = user;
             userName.textContent = user.name;
             userUsername.textContent = `@${user.username}`;
+            
+            // Connect WebSocket
+            connectWebSocket(user.id);
         } else {
             throw new Error('Failed to load user profile');
         }

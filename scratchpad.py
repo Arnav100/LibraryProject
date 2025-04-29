@@ -5,5 +5,5 @@ from backend.adapters.kafka_publisher import KafkaPublisher
 
 publisher = KafkaPublisher('localhost:9092')
 
-publisher.publish(BookReturned(1, 1))
+publisher.publish(BookReturned(4, 2))
 

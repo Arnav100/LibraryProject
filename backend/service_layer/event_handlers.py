@@ -2,6 +2,8 @@ from typing import Dict, Type, Callable
 from backend.domain import events
 from backend.service_layer.unit_of_work import AbstractUnitOfWork
 import logging
+import json
+import redis
 
 
 def handle_book_checked_out(event: events.BookCheckedOut, uow: AbstractUnitOfWork):
@@ -23,7 +25,18 @@ def handle_hold_updated(event: events.HoldUpdated, uow: AbstractUnitOfWork):
         user = uow.users.get(event.user_id)
         book = uow.books.get(event.book_id)
         print(f"Hold updated for book {book.name} by user {user.name}")
-        # Send notification to user
+        
+        # Publish notification to Redis
+        redis_client = redis.Redis(host='localhost', port=6380, db=0)
+        notification = {
+            "type": "hold_updated",
+            "message": f"Your hold position for '{book.name}' has changed to {event.new_position}",
+            "book_id": event.book_id,
+            "new_position": event.new_position,
+            "user_id": event.user_id
+        }
+        redis_client.publish('notifications', json.dumps(notification))
+        
         uow.commit()
 
 # def handle_hold_placed(event: events.HoldPlaced, uow: AbstractUnitOfWork):
