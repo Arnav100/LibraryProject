@@ -7,3 +7,4 @@ publisher = KafkaPublisher('localhost:9092')
 
 publisher.publish(BookReturned(4, 2))
 
+print("test")
