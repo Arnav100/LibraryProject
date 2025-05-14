@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import timedelta
+from contextlib import asynccontextmanager
 
 from backend import bootstrap
 from backend.entrypoint.middleware.auth import AuthMiddleware
@@ -16,7 +17,15 @@ from backend.auth.utils import (
 from backend.entrypoint.connection_manager import ConnectionManager
 import uvicorn
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await manager.start()
+    yield
+    # Shutdown
+    await manager.stop()
+
+app = FastAPI(lifespan=lifespan)
 origins = [
     "http://localhost",
     "http://localhost:8080",
@@ -32,15 +41,7 @@ app.add_middleware(
 bus = bootstrap.bootstrap()
 app.add_middleware(AuthMiddleware, uow=bus.uow)
 
-manager = ConnectionManager()
-
-@app.on_event("startup")
-async def startup_event():
-    await manager.start()
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await manager.stop()
+manager = ConnectionManager(bus=bus)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -146,11 +147,10 @@ async def checkout(user_id, book_id, request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/return")
-async def return_book(user_id, book_id, request: Request):
+async def return_book(checkout_id, request: Request):
     try: 
         cmd = commands.ReturnBook(
-            user_id=user_id,
-            book_id=book_id
+            checkout_id=checkout_id
         )
         return bus.handle(cmd)
     except ValueError as e:
@@ -192,6 +192,7 @@ async def remove_hold(hold_id, request: Request):
 
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    print(f"Connecting websocket for user {user_id}")
     await manager.connect(websocket, user_id)
     try:
         while True:

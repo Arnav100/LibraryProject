@@ -4,191 +4,76 @@ const API_BASE_URL = 'http://localhost:8000';
 // DOM Elements
 const loginBtn = document.getElementById('loginBtn');
 const registerBtn = document.getElementById('registerBtn');
-const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
-const loginForm = document.getElementById('loginForm');
-const registerForm = document.getElementById('registerForm');
-const searchInput = document.getElementById('searchInput');
-const recentBooksContainer = document.getElementById('recentBooks');
-
-// Event Listeners
-loginBtn.addEventListener('click', () => loginModal.show());
-registerBtn.addEventListener('click', () => registerModal.show());
 
 // WebSocket connection
-let socket = null;
-
 function connectWebSocket(userId) {
-    if (socket) {
-        socket.close();
-    }
-    
-    socket = new WebSocket(`ws://localhost:8000/ws/${userId}`);
-    
-    socket.onmessage = (event) => {
-        const notification = JSON.parse(event.data);
-        if (notification.type === 'hold_updated') {
-            showToast(notification.message, 'info');
-            // If we're on the holds page, refresh the holds list
-            if (window.location.pathname.includes('account.html')) {
-                loadHolds();
-            }
-        }
-    };
-    
-    socket.onclose = () => {
-        console.log('WebSocket connection closed');
-        // Try to reconnect after 5 seconds
-        setTimeout(() => connectWebSocket(userId), 5000);
-    };
-}
-
-// Login functionality
-loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(loginForm);
-    const data = {
-        username: formData.get('username'),
-        password: formData.get('password')
-    };
-
     try {
-        const response = await fetch(`${API_BASE_URL}/token`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `username=${data.username}&password=${data.password}`
-        });
-
-        if (response.ok) {
-            const result = await response.json();
-            localStorage.setItem('token', result.access_token);
-            
-            // Get user ID and connect WebSocket
-            const userResponse = await fetch(`${API_BASE_URL}/user/me`, {
-                headers: {
-                    'Authorization': `Bearer ${result.access_token}`
-                }
-            });
-            if (userResponse.ok) {
-                const user = await userResponse.json();
-                connectWebSocket(user.id);
-            }
-            
-            loginModal.hide();
-            updateAuthState();
-            showToast('Login successful!', 'success');
-        } else {
-            showToast('Login failed. Please check your credentials.', 'error');
+        if (window.socket && window.socket.readyState !== WebSocket.CLOSED) {
+            window.socket.close();
         }
-    } catch (error) {
-        console.error('Login error:', error);
-        showToast('An error occurred during login.', 'error');
-    }
-});
-
-// Registration functionality
-registerForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(registerForm);
-    const data = {
-        name: formData.get('name'),
-        username: formData.get('username'),
-        password: formData.get('password')
-    };
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/users`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        });
-
-        if (response.ok) {
-            showToast('Registration successful! Please login.', 'success');
-            registerModal.hide();
-        } else {
-            showToast('Registration failed. Please try again.', 'error');
-        }
-    } catch (error) {
-        console.error('Registration error:', error);
-        showToast('An error occurred during registration.', 'error');
-    }
-});
-
-// Search functionality
-let searchTimeout;
-searchInput.addEventListener('input', (e) => {
-    clearTimeout(searchTimeout);
-    const searchTerm = e.target.value;
-    
-    if (searchTerm.length > 2) {
-        searchTimeout = setTimeout(async () => {
+        
+        window.socket = new WebSocket(`ws://localhost:8000/ws/${userId}`);
+        
+        window.socket.onopen = () => {
+            console.log('WebSocket connection established');
+        };
+        
+        window.socket.onmessage = (event) => {
             try {
-                const response = await fetch(`${API_BASE_URL}/search?title=${searchTerm}`);
-                if (response.ok) {
-                    const books = await response.json();
-                    displayBooks(books);
+                console.log(event)
+                const notification = JSON.parse(JSON.parse(event.data)).payload;
+
+                console.log(notification);
+                console.log(notification.type);
+                if (notification.type === 'hold_updated') {
+                    console.log('In hold updated');
+                    showToast(notification.message, 'info');
+                    // If we're on the holds page, refresh the holds list
+                    if (window.location.pathname.includes('account.html')) {
+                        loadHolds();
+                    }
                 }
             } catch (error) {
-                console.error('Search error:', error);
+                console.error('Error processing notification:', error);
             }
-        }, 300);
-    }
-});
-
-// Book display functions
-function createBookCard(book) {
-    const card = document.createElement('div');
-    card.className = 'col-md-4 col-sm-6';
-    card.innerHTML = `
-        <div class="book-card">
-            <h3>${book.name}</h3>
-            <p><i class="fas fa-user me-2"></i>${book.author}</p>
-            <p><i class="fas fa-barcode me-2"></i>${book.isbn}</p>
-            <p><i class="fas fa-copy me-2"></i>Available Copies: ${book.total_copies}</p>
-            <button class="btn btn-warm checkout-btn" data-book-id="${book.id}">
-                <i class="fas fa-shopping-cart me-2"></i>Checkout
-            </button>
-        </div>
-    `;
-    return card;
-}
-
-function displayBooks(books) {
-    recentBooksContainer.innerHTML = '';
-    books.forEach(book => {
-        recentBooksContainer.appendChild(createBookCard(book));
-    });
-}
-
-// Load recent books on page load
-async function loadRecentBooks() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/books`);
-        if (response.ok) {
-            const books = await response.json();
-            displayBooks(books);
-        }
+        };
+        
+        window.socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+        
+        window.socket.onclose = () => {
+            console.log('WebSocket connection closed');
+            // Try to reconnect after 5 seconds
+            setTimeout(() => connectWebSocket(userId), 5000);
+        };
     } catch (error) {
-        console.error('Error loading books:', error);
-        showToast('Error loading books. Please try again later.', 'error');
+        console.error('Error connecting to WebSocket:', error);
     }
 }
 
 // Update authentication state
 function updateAuthState() {
     const token = localStorage.getItem('token');
+    const authContainer = document.querySelector('.d-flex');
+    
     if (token) {
-        loginBtn.style.display = 'none';
-        registerBtn.style.display = 'none';
-        // Add user profile button or other authenticated UI elements
+        // User is logged in
+        authContainer.innerHTML = `
+            <button id="logoutBtn" class="btn btn-outline-light">Logout</button>
+        `;
+        
+        // Add logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        });
     } else {
-        loginBtn.style.display = 'block';
-        registerBtn.style.display = 'block';
+        // User is not logged in
+        authContainer.innerHTML = `
+            <a href="login.html" class="btn btn-outline-light me-2">Login</a>
+            <a href="register.html" class="btn btn-warm">Register</a>
+        `;
     }
 }
 
@@ -225,6 +110,5 @@ function showToast(message, type = 'info') {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    loadRecentBooks();
     updateAuthState();
 }); 

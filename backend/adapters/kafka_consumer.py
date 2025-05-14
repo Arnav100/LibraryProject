@@ -1,25 +1,27 @@
 from confluent_kafka import Consumer, KafkaError
 import json
 from backend.domain import events
-from backend.service_layer import messagebus
+from typing import AsyncGenerator
+import asyncio
 
 class KafkaConsumer:
-    def __init__(self, bootstrap_servers: str, group_id: str, bus: messagebus.MessageBus):
+    def __init__(self, bootstrap_servers: str, group_id: str):
         self.consumer = Consumer({
             'bootstrap.servers': bootstrap_servers,
             'group.id': group_id,
             'auto.offset.reset': 'earliest'
         })
-        self.messagebus = bus
+        self.running = True
 
     def subscribe(self, topics: list[str]):
         self.consumer.subscribe(topics)
 
-    def start_consuming(self):
+    async def start_consuming(self) -> AsyncGenerator[events.Event, None]:
         try:
-            while True:
+            while self.running:
                 msg = self.consumer.poll(1.0)
                 if msg is None:
+                    await asyncio.sleep(0.1)
                     continue
                 if msg.error():
                     if msg.error().code() == KafkaError._PARTITION_EOF:
@@ -28,15 +30,20 @@ class KafkaConsumer:
                         print(f"Consumer error: {msg.error()}")
                         continue
 
-                event_data = json.loads(msg.value().decode('utf-8'))
-                event_type = event_data['event_type']
-                event_class = getattr(events, event_type)
-                event = event_class(**event_data['payload'])
-                
-                # print(f"Received event: {event}")
-                self.messagebus.handle(event)
+                try:
+                    event_data = json.loads(msg.value().decode('utf-8'))
+                    event_type = event_data['event_type']
+                    event_class = getattr(events, event_type)
+                    event = event_class(**event_data['payload'])
+                    yield event
+                except Exception as e:
+                    print(f"Error processing message: {e}")
+                    continue
 
-        except KeyboardInterrupt:
-            print("Consumer stopped by user")
+        except Exception as e:
+            print(f"Consumer error: {e}")
         finally:
-            self.consumer.close() 
+            self.consumer.close()
+
+    def stop(self):
+        self.running = False 

@@ -11,6 +11,12 @@ class Event:
         "event_type": self.__class__.__name__,
         "payload": cattrs.unstructure(self),
     }, default=str)
+        
+@define(frozen=True)
+class Notification(Event):
+    user_id: int
+    type: str
+    message: str
 
 @define(frozen=True)
 class BookReturned(Event):

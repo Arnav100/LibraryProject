@@ -1,7 +1,9 @@
 from backend.adapters.kafka_consumer import KafkaConsumer
 from backend import bootstrap
 import os
-def main():
+import asyncio
+
+async def main():
     # Initialize Kafka consumer
     bus = bootstrap.bootstrap()
 
@@ -9,14 +11,19 @@ def main():
     consumer = KafkaConsumer(
         bootstrap_servers=kafka_bootstrap_servers,
         group_id='library-service-group',
-        bus=bus
     )
 
     topics = ["my-topic"]
     consumer.subscribe(topics)
 
     print("Starting Kafka consumer...")
-    consumer.start_consuming()
+    try:
+        async for event in consumer.start_consuming():
+            bus.handle(event)
+    except KeyboardInterrupt:
+        print("\nShutting down consumer...")
+    finally:
+        consumer.stop()
 
 if __name__ == "__main__":
-    main() 
+    asyncio.run(main()) 

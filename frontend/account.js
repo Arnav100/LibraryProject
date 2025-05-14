@@ -7,8 +7,12 @@ const userName = document.getElementById('userName');
 const userUsername = document.getElementById('userUsername');
 const checkoutsTableBody = document.getElementById('checkoutsTableBody');
 const holdsTableBody = document.getElementById('holdsTableBody');
-const returnBookModal = new bootstrap.Modal(document.getElementById('returnBookModal'));
-const cancelHoldModal = new bootstrap.Modal(document.getElementById('cancelHoldModal'));
+const returnBookModal = new bootstrap.Modal(document.getElementById('returnBookModal'), {
+    backdrop: false
+});
+const cancelHoldModal = new bootstrap.Modal(document.getElementById('cancelHoldModal'), {
+    backdrop: false
+});
 const confirmReturn = document.getElementById('confirmReturn');
 const confirmCancelHold = document.getElementById('confirmCancelHold');
 
@@ -196,15 +200,11 @@ function displayHolds(holds) {
 // Handle return book
 confirmReturn.addEventListener('click', async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/return`, {
+        const response = await fetch(`${API_BASE_URL}/return?checkout_id=${currentCheckoutId}`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                checkout_id: currentCheckoutId
-            })
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
 
         if (response.ok) {

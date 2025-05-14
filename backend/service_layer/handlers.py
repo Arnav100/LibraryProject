@@ -48,7 +48,7 @@ def checkout(cmd: commands.CheckoutBook, uow: AbstractUnitOfWork):
 
 def return_book(cmd: commands.ReturnBook, uow: AbstractUnitOfWork):
     with uow:
-        checkout = uow.checkouts.get_by_info(cmd.book_id, cmd.user_id)
+        checkout = uow.checkouts.get(cmd.checkout_id)
         if not checkout:
             raise ValueError("Checkout not found")
         

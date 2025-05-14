@@ -8,8 +8,8 @@ import redis
 
 def handle_book_checked_out(event: events.BookCheckedOut, uow: AbstractUnitOfWork):
     with uow:
-        checkout = uow.checkouts.get_by_info(event.book_id, event.user_id)
-        print(f"Book {checkout.book.name} was checked out by user {checkout.user.name}")
+        user = uow.users.get(event.user_id)
+        user.send_notification("checked_out", "You successfully checked out a book!")
         # Send notification to user
         
 def handle_book_returned(event: events.BookReturned, uow: AbstractUnitOfWork):
@@ -27,16 +27,8 @@ def handle_hold_updated(event: events.HoldUpdated, uow: AbstractUnitOfWork):
         print(f"Hold updated for book {book.name} by user {user.name}")
         
         # Publish notification to Redis
-        redis_client = redis.Redis(host='localhost', port=6380, db=0)
-        notification = {
-            "type": "hold_updated",
-            "message": f"Your hold position for '{book.name}' has changed to {event.new_position}",
-            "book_id": event.book_id,
-            "new_position": event.new_position,
-            "user_id": event.user_id
-        }
-        redis_client.publish('notifications', json.dumps(notification))
-        
+        user.send_notification('hold_updated', f"Your hold position for '{book.name}' has changed to {event.new_position}")
+    
         uow.commit()
 
 # def handle_hold_placed(event: events.HoldPlaced, uow: AbstractUnitOfWork):

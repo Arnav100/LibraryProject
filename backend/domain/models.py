@@ -52,6 +52,9 @@ class User(Model):
         self.created_at = datetime.now()
         self.id = None
         self.events = []
+        
+    def send_notification(self, type: str, message: str):
+        self.events.append(events.Notification(self.id, type, message))
 
 class Checkout(Model):
     

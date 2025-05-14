@@ -3,7 +3,9 @@ const API_BASE_URL = 'http://localhost:8000';
 
 // DOM Elements
 const loginForm = document.getElementById('loginForm');
-const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+const errorModal = new bootstrap.Modal(document.getElementById('errorModal'), {
+    backdrop: false
+});
 const errorMessage = document.getElementById('errorMessage');
 
 // Handle form submission

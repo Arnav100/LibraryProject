@@ -26,8 +26,7 @@ class CheckoutBook(Command):
 
 @define(frozen=True)
 class ReturnBook(Command):
-    book_id: int
-    user_id: int
+    checkout_id: int
 
 @define(frozen=True)
 class PlaceHold(Command):
