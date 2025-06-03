@@ -14,6 +14,8 @@ class ConnectionManager:
         self.running = True
         self._notification_task = None
         self.kafka_bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+        print("Os: ", os.environ)
+        print(f"Kafka bootstrap servers: {self.kafka_bootstrap_servers}")
         self.kafka_group_id = 'notification_group'
 
     async def start(self):

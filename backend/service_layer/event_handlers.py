@@ -1,9 +1,7 @@
 from typing import Dict, Type, Callable
 from backend.domain import events
 from backend.service_layer.unit_of_work import AbstractUnitOfWork
-import logging
-import json
-import redis
+
 
 
 def handle_book_checked_out(event: events.BookCheckedOut, uow: AbstractUnitOfWork):
