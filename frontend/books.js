@@ -73,9 +73,9 @@ const API_BASE_URL = 'http://localhost:8000';
 // Create book card
 function createBookCard(book) {
     const card = document.createElement('div');
-    card.className = 'col-md-4 col-sm-6';
+    card.className = 'col-md-4 col-sm-6 mb-4';
     card.innerHTML = `
-        <div class="book-card">
+        <div class="book-card h-100">
             <div class="book-cover">
                 <img src="${book.cover_url || 'https://via.placeholder.com/200x300'}" 
                      class="img-fluid rounded" 
@@ -83,14 +83,22 @@ function createBookCard(book) {
             </div>
             <div class="book-info mt-3">
                 <h3 class="h5 text-warm">${book.name}</h3>
-                <p class="text-muted"><i class="fas fa-user me-2"></i>${book.author}</p>
-                <p class="text-muted"><i class="fas fa-barcode me-2"></i>${book.isbn}</p>
-                <div class="d-flex justify-content-between align-items-center mt-2">
-                    <span class="badge bg-${book.available_copies > 0 ? 'success' : 'danger'}">
-                        ${book.available_copies} Available
-                    </span>
-                    <button class="btn btn-sm btn-warm view-details" data-book-id="${book.id}">
-                        View Details
+                <p class="text-muted mb-2"><i class="fas fa-user me-2"></i>${book.author}</p>
+                <p class="text-muted mb-3"><i class="fas fa-barcode me-2"></i>${book.isbn}</p>
+                <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-${book.available_copies > 0 ? 'success' : 'danger'}">
+                            ${book.available_copies} Available
+                        </span>
+                        <button class="btn btn-sm btn-warm view-details" data-book-id="${book.id}">
+                            <i class="fas fa-info-circle me-1"></i>Details
+                        </button>
+                    </div>
+                    <button class="btn btn-sm w-100 ${book.available_copies > 0 ? 'btn-success' : 'btn-warning'} action-btn" 
+                            data-book-id="${book.id}" 
+                            data-action="${book.available_copies > 0 ? 'checkout' : 'hold'}">
+                        <i class="fas ${book.available_copies > 0 ? 'fa-book' : 'fa-clock'} me-1"></i>
+                        ${book.available_copies > 0 ? 'Checkout' : 'Place Hold'}
                     </button>
                 </div>
             </div>
@@ -124,44 +132,65 @@ function showBookDetails(book) {
     const modalImage = document.querySelector('#bookDetailModal .modal-body img');
     modalImage.src = book.cover_url || 'https://via.placeholder.com/300x400';
     modalImage.alt = book.name;
-    // modalImage.onerror = function() {
-    //     this.src = 'https://via.placeholder.com/300x400?text=No+Cover';
-    // };
     
     // Add description
     document.getElementById('modalBookDescription').textContent = 
         `${book.description}. The book was added to our library on ${new Date(book.created_at).toLocaleDateString()}.`;
     
-    // Add checkout button functionality
-    const checkoutBtn = document.querySelector('#bookDetailModal .checkout-btn');
-    checkoutBtn.onclick = function() {
-        if (book.available_copies > 0) {
-            // Add checkout logic here
+    // Update action button
+    const actionBtn = document.querySelector('#bookDetailModal .checkout-btn');
+    if (book.available_copies > 0) {
+        actionBtn.className = 'btn btn-success checkout-btn';
+        actionBtn.innerHTML = '<i class="fas fa-book me-2"></i>Checkout';
+        actionBtn.onclick = function() {
+            // Checkout logic here
             alert(`Checking out ${book.name}`);
             modal.hide();
-        } else {
-            alert('Sorry, this book is currently not available.');
-        }
-    };
+        };
+    } else {
+        actionBtn.className = 'btn btn-warning checkout-btn';
+        actionBtn.innerHTML = '<i class="fas fa-clock me-2"></i>Place Hold';
+        actionBtn.onclick = function() {
+            // Place hold logic here
+            alert(`Placed hold for ${book.name}`);
+            modal.hide();
+        };
+    }
     
     // Show the modal
     modal.show();
 }
 
-// Add event listeners for view details buttons
+// Add event listeners for view details buttons and action buttons
 function addViewDetailsListeners(books) {
     document.querySelectorAll('.view-details').forEach(button => {
         button.addEventListener('click', (e) => {
-            const bookId = parseInt(e.target.dataset.bookId);
+            const bookId = parseInt(e.target.closest('.view-details').dataset.bookId);
             const book = books.find(b => b.id === bookId);
             if (book) {
-                console.log(book);
                 showBookDetails(book);
             }
         });
     });
-}
 
+    document.querySelectorAll('.action-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const bookId = parseInt(e.target.closest('.action-btn').dataset.bookId);
+            const action = e.target.closest('.action-btn').dataset.action;
+            const book = books.find(b => b.id === bookId);
+            
+            if (book) {
+                if (action === 'checkout') {
+                    // Checkout logic here
+                    alert(`Checking out ${book.name}`);
+                } else {
+                    // Place hold logic here
+                    alert(`Placed hold for ${book.name}`);
+                }
+            }
+        });
+    });
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
