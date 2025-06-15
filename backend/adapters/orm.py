@@ -3,7 +3,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import registry, relationship
 
-from backend.domain.models import User, Book, Checkout, Hold, BookGift, BookRequest
+from backend.domain.models import User, Book, BookGift, BookRequest
 
 metadata = MetaData()
 
@@ -27,28 +27,6 @@ users = Table(
     Column('password', String(255), nullable=False),
     Column('email', String(255), nullable=False),
     Column('created_at', DateTime, nullable=False),
-)
-
-
-
-
-checkouts = Table(
-    'checkouts', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('book_id', ForeignKey('books.id')),
-    Column('user_id', ForeignKey('users.id')),
-    Column('start_date', Date),
-    Column('end_date', Date),
-    Column('returned', Boolean),
-)
-
-holds = Table(
-    'holds', metadata,
-    Column('id', Integer, primary_key=True),
-    Column('book_id', ForeignKey('books.id')),
-    Column('user_id', ForeignKey('users.id')),
-    Column('position', Integer),
-    Column('hold_date', Date),
 )
 
 book_gifts = Table(
@@ -79,16 +57,6 @@ def start_mappers():
 
     users_mapper = mapper_registry.map_imperatively(User, users)
     books_mapper = mapper_registry.map_imperatively(Book, books)
-    checkouts_mapper = mapper_registry.map_imperatively(Checkout, checkouts, properties={
-        'book': relationship(Book),
-        'user': relationship(User)
-    })
-    
-    holds_mapper = mapper_registry.map_imperatively(Hold, holds, properties={
-        'book': relationship(Book),
-        'user': relationship(User)
-    })
-
     book_gifts_mapper = mapper_registry.map_imperatively(BookGift, book_gifts, properties={
         'book': relationship(Book),
         'giver': relationship(User, foreign_keys=[book_gifts.c.giver_id]),
@@ -107,14 +75,6 @@ def receive_load(book, _):
 def receive_load(user, _):
     user.events = []
 
-@event.listens_for(Checkout, 'load')
-def receive_load(checkout, _):
-    checkout.events = []
-
-@event.listens_for(Hold, 'load')
-def receive_load(hold, _):
-    hold.events = []
-    
 @event.listens_for(BookGift, 'load')
 def receive_load(book_gift, _):
     book_gift.events = []

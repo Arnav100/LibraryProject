@@ -126,69 +126,11 @@ async def add_user(user: dict):
     )
     return bus.handle(cmd)
 
-@app.get("/checkouts")
-async def get_checkouts(request: Request):
-    return views.CheckoutView.get_all(bus.uow)
-
-@app.get("/checkouts/me")
-async def get_checkouts(request: Request):
-    user_id = request.state.user_id
-    return views.CheckoutView.get_by_user(bus.uow, user_id)
-
-@app.post("/checkout")
-async def checkout(user_id, book_id, request: Request):
-    try: 
-        cmd = commands.CheckoutBook(
-            user_id=user_id,
-            book_id=book_id
-        )
-        return bus.handle(cmd)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.post("/return")
-async def return_book(checkout_id, request: Request):
-    try: 
-        cmd = commands.ReturnBook(
-            checkout_id=checkout_id
-        )
-        return bus.handle(cmd)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/search")
 async def search_book(title: str, request: Request):
     return views.BookView.search(bus.uow, title)
 
-@app.get("/holds")
-async def get_holds(request: Request):
-    return views.HoldView.get_all(bus.uow)
-
-@app.get("/holds/me")
-async def get_holds(request: Request):
-    user_id = request.state.user_id
-    return views.HoldView.get_by_user(bus.uow, user_id)
-
-@app.post("/hold")
-async def place_hold(user_id, book_id, request: Request):
-    try: 
-        cmd = commands.PlaceHold(
-            user_id=user_id,
-            book_id=book_id
-        )
-        return bus.handle(cmd)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.delete("/hold")
-async def remove_hold(hold_id, request: Request):
-    try: 
-        cmd = commands.RemoveHold(
-            hold_id=hold_id
-        )
-        return bus.handle(cmd)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):

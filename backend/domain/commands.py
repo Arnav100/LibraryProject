@@ -21,27 +21,6 @@ class AddBook(Command):
 class RemoveBook(Command):
     book_id: int
 
-@define(frozen=True)
-class CheckoutBook(Command):
-    book_id: int
-    user_id: int
-    start_date: str | None = None
-    end_date: str | None = None
-
-@define(frozen=True)
-class ReturnBook(Command):
-    checkout_id: int
-
-@define(frozen=True)
-class PlaceHold(Command):
-    book_id: int
-    user_id: int
-    hold_date: str
-
-@define(frozen=True)
-class RemoveHold(Command):
-    book_id: int
-    user_id: int
 
 @define(frozen=True)
 class RegisterUser(Command):
@@ -49,29 +28,6 @@ class RegisterUser(Command):
     username: str
     password: str
 
-@dataclass
-class AddFriend(Command):
-    name: str
-    username: str
-    password: str
-    email: str
-    address: Optional[str] = None
-    preferences: Optional[str] = None
-
-@dataclass
-class GiftBook(Command):
-    book_title: str
-    author: str
-    isbn: str
-    price: Decimal
-    recipient_id: int
-    cover_url: Optional[str] = None
-    description: Optional[str] = None
-
-@dataclass
-class UpdateGiftStatus(Command):
-    gift_id: int
-    new_status: str
 
 @dataclass
 class RequestBook(Command):

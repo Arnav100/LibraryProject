@@ -1,6 +1,4 @@
-import cattrs
 from typing import List, Optional
-from backend.domain.models import Book, User, Checkout
 from .unit_of_work import AbstractUnitOfWork
 
 class BookView:
@@ -31,26 +29,3 @@ class UserView:
         with uow:
             user = uow.users.get(user_id)
             return user.serialize() if user else None
-
-class CheckoutView:
-    @staticmethod
-    def get_all(uow: AbstractUnitOfWork) -> List[dict]:
-        with uow:
-            return [checkout.serialize() for checkout in uow.checkouts.get_all()] 
-    
-    @staticmethod
-    def get_by_user(uow: AbstractUnitOfWork, user_id: int) -> List[dict]:
-        with uow:
-            return [checkout.serialize() for checkout in uow.checkouts.get_by_user(user_id)] 
-        
-class HoldView:
-    @staticmethod
-    def get_all(uow: AbstractUnitOfWork) -> List[dict]:
-        with uow:
-            return [hold.serialize() for hold in uow.holds.get_all()] 
-    
-    @staticmethod
-    def get_by_user(uow: AbstractUnitOfWork, user_id: int) -> List[dict]:
-        with uow:
-            return [hold.serialize() for hold in uow.holds.get_by_user(user_id)] 
-        

@@ -11,8 +11,6 @@ from backend.adapters import repository
 class AbstractUnitOfWork(abc.ABC):
     books: repository.AbstractBookRepository
     users: repository.AbstractUserRepository
-    checkouts: repository.AbstractCheckoutRepository
-    holds: repository.AbstractHoldRepository
     
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -32,13 +30,6 @@ class AbstractUnitOfWork(abc.ABC):
             while user.events:
                 yield user.events.pop(0)
 
-        for checkout in self.checkouts.seen:
-            while checkout.events:
-                yield checkout.events.pop(0)
-                
-        for hold in self.holds.seen:
-            while hold.events:
-                yield hold.events.pop(0)    
 
     @abc.abstractmethod
     def _commit(self):
@@ -64,8 +55,6 @@ class UnitOfWork(AbstractUnitOfWork):
         self.session: Session = self.session_factory()  
         self.books = repository.BookRepository(self.session)
         self.users = repository.UserRepository(self.session)
-        self.checkouts = repository.CheckoutRepository(self.session)
-        self.holds = repository.HoldRepository(self.session)
         return super().__enter__()
 
     def __exit__(self, *args):
