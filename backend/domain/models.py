@@ -8,6 +8,8 @@ from typing import List, Optional
 from backend.domain import events
 
 class Model:
+    events: list[events.Event] = []
+    
     def serialize(self) -> dict:
         def serialize_value(value):
             if isinstance(value, datetime):
@@ -35,7 +37,6 @@ class User(Model):
         self.email = email
         self.created_at = datetime.now()
         self.id = None
-        self.events = []
         
     def send_notification(self, type: str, message: str):
         self.events.append(events.Notification(self.id, type, message))
@@ -52,7 +53,6 @@ class Book(Model):
         self.description = description
         self.created_at = created_at if created_at else datetime.now()
         self.id = None
-        self.events = []
 
 class BookGift(Model):
     def __init__(self, book: Book, recipient: User, 
@@ -65,7 +65,6 @@ class BookGift(Model):
         self.approved = approved
         self.created_at = created_at if created_at else datetime.now()
         self.id = None
-        self.events = []
         
     def update_approval(self, new_status: bool):
         self.approved = new_status
@@ -85,27 +84,26 @@ class BookRequest(Model):
     def __init__(self, user: User, title: str, 
                  shop_url: str, price: int, 
                  note: Optional[str] = None,
-                 created_at: Optional[datetime] = None,
+                 requested_at: Optional[datetime] = None,
                  fulfilled: bool = False):
         self.user = user
         self.title = title
         self.shop_url = shop_url
-        self.price_cents = price
+        self.price = price
         self.note = note
         self.fulfilled = fulfilled
-        self.created_at = created_at if created_at else datetime.now()
+        self.requested_at = requested_at if requested_at else datetime.now()
         self.id = None
-        self.events = []
         
 
     def values(self) -> dict:
         return {
-            "book_title": self.book_title,
-            "author": self.author,
-            "requester": self.requester,
-            "request_date": self.request_date,
-            "status": self.status,
-            "notes": self.notes,
+            "title": self.title,
+            "shop_url": self.shop_url,
+            "price": self.price,
+            "fulfilled": self.fulfilled,
+            "notes": self.note,
+            "requested_at": self.requested_at,
             "id": self.id
         }
 

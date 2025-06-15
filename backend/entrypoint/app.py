@@ -132,6 +132,28 @@ async def search_book(title: str, request: Request):
     return views.BookView.search(bus.uow, title)
 
 
+@app.get("/book_gifts")
+async def get_book_gifts(request: Request):
+    return views.BookGiftView.get_all(bus.uow)
+
+
+@app.get("/book_requests")
+async def get_book_requests(request: Request):
+    return views.BookRequestView.get_all(bus.uow)
+
+
+@app.post("/book_requests")
+async def add_book_request(book_request: dict, request: Request):
+    cmd = commands.RequestBook(
+        title=book_request["title"],
+        shop_url=book_request["shop_url"],
+        price=book_request["price"],
+        requester_id=request.state.user_id,
+        note=book_request["note"]
+    )
+    return bus.handle(cmd)
+
+
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
     print(f"Connecting websocket for user {user_id}")

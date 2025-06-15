@@ -41,7 +41,7 @@ book_gifts = Table(
 )
 
 book_requests = Table(
-    'wishlists', metadata,
+    'wishlist', metadata,
     Column('id', Integer, primary_key=True),
     Column('user_id', ForeignKey('users.id'), nullable=False),
     Column('title', String(255), nullable=False),
@@ -49,7 +49,7 @@ book_requests = Table(
     Column('price_cents', Integer, nullable=False),
     Column('note', String(255)),
     Column('fulfilled', Boolean, nullable=False, default=False),
-    Column('created_at', DateTime, nullable=False),
+    Column('requested_at', DateTime, nullable=False),
 )
 
 def start_mappers():
@@ -64,7 +64,8 @@ def start_mappers():
     })
 
     book_requests_mapper = mapper_registry.map_imperatively(BookRequest, book_requests, properties={
-        'user': relationship(User)
+        'user': relationship(User),
+        'price': book_requests.c.price_cents
     })
 
 @event.listens_for(Book, 'load')

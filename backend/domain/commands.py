@@ -31,10 +31,11 @@ class RegisterUser(Command):
 
 @dataclass
 class RequestBook(Command):
-    book_title: str
-    author: str
+    title: str
+    shop_url: str
+    price: int
     requester_id: int
-    notes: Optional[str] = None
+    note: Optional[str] = None
 
 @dataclass
 class UpdateRequestStatus(Command):

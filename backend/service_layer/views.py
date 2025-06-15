@@ -29,3 +29,26 @@ class UserView:
         with uow:
             user = uow.users.get(user_id)
             return user.serialize() if user else None
+
+
+class BookGiftView:
+    @staticmethod
+    def get_all(uow: AbstractUnitOfWork) -> List[dict]:
+        with uow:
+            return [book_gift.serialize() for book_gift in uow.book_gifts.get_all()]
+    
+    @staticmethod
+    def get_by_id(uow: AbstractUnitOfWork, book_gift_id: int) -> Optional[dict]:
+        with uow:
+            book_gift = uow.book_gifts.get(book_gift_id)        
+            
+class BookRequestView:
+    @staticmethod
+    def get_all(uow: AbstractUnitOfWork) -> List[dict]:
+        with uow:
+            return [book_request.serialize() for book_request in uow.book_requests.get_all()]
+    
+    @staticmethod
+    def get_by_id(uow: AbstractUnitOfWork, book_request_id: int) -> Optional[dict]:
+        with uow:
+            book_request = uow.book_requests.get(book_request_id)   

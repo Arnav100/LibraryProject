@@ -3,7 +3,9 @@ import abc
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
-
+from backend.domain.models import Model
+from backend.domain.events import Event
+from typing import Generator
 
 from backend import config
 from backend.adapters import repository
@@ -11,6 +13,9 @@ from backend.adapters import repository
 class AbstractUnitOfWork(abc.ABC):
     books: repository.AbstractBookRepository
     users: repository.AbstractUserRepository
+    book_gifts: repository.AbstractBookGiftRepository
+    book_requests: repository.AbstractBookRequestRepository
+    
     
     def __enter__(self) -> AbstractUnitOfWork:
         return self
@@ -21,15 +26,15 @@ class AbstractUnitOfWork(abc.ABC):
     def commit(self):
         self._commit()
 
-    def collect_new_events(self):
-        for book in self.books.seen:
-            while book.events:
-                yield book.events.pop(0)
-        
-        for user in self.users.seen:
-            while user.events:
-                yield user.events.pop(0)
+    def collect_new_events(self) -> Generator[Event, None, None]:
+        for repo in self._repositories():
+            for model in repo.seen:
+                while model.events:
+                    yield model.events.pop(0)       
 
+    def _repositories(self) -> list[repository.AbstractRepository[Model]]:
+        # Extend this list as you add repositories
+        return [self.books, self.users, self.book_gifts, self.book_requests]
 
     @abc.abstractmethod
     def _commit(self):
@@ -55,6 +60,8 @@ class UnitOfWork(AbstractUnitOfWork):
         self.session: Session = self.session_factory()  
         self.books = repository.BookRepository(self.session)
         self.users = repository.UserRepository(self.session)
+        self.book_gifts = repository.BookGiftRepository(self.session)
+        self.book_requests = repository.BookRequestRepository(self.session)
         return super().__enter__()
 
     def __exit__(self, *args):
