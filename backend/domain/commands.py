@@ -1,4 +1,8 @@
 from attr import define
+from dataclasses import dataclass
+from datetime import datetime
+from decimal import Decimal
+from typing import Optional
 
 @define
 class Command:
@@ -44,3 +48,51 @@ class RegisterUser(Command):
     name: str
     username: str
     password: str
+
+@dataclass
+class AddFriend(Command):
+    name: str
+    username: str
+    password: str
+    email: str
+    address: Optional[str] = None
+    preferences: Optional[str] = None
+
+@dataclass
+class GiftBook(Command):
+    book_title: str
+    author: str
+    isbn: str
+    price: Decimal
+    recipient_id: int
+    cover_url: Optional[str] = None
+    description: Optional[str] = None
+
+@dataclass
+class UpdateGiftStatus(Command):
+    gift_id: int
+    new_status: str
+
+@dataclass
+class RequestBook(Command):
+    book_title: str
+    author: str
+    requester_id: int
+    notes: Optional[str] = None
+
+@dataclass
+class UpdateRequestStatus(Command):
+    request_id: int
+    new_status: str
+
+@dataclass
+class GetFriendSpending(Command):
+    friend_id: int
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+
+@dataclass
+class GetFriendGifts(Command):
+    friend_id: int
+    include_delivered: bool = True
+    include_pending: bool = True
